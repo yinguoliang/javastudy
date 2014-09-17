@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="GBK" ?>
+<project name="modules" default="build" basedir=".">
+	<property file="build.properties"/>
+	<property name="ExtAntTask.class" value="com.sinosoft.ExtAntTask"></property>
+	<property name="localpath" value="${build.modules.basedir}/"/>
+	<property name="svnantjar" value="${build.svn.svnant.jarlocation}"></property>
+	<property name="svn.username" value="yinguoliang"></property>
+	<property name="svn.password" value="123456"></property>
+	<property name="svn.url" value="http://10.1.33.55:83/svnmis/开发/中介管理系统/开发分支/20140523--销管3.1改造四期/modules"></property>
+	
+	<typedef resource="org/tigris/subversion/svnant/svnantlib.xml" classpath="${svnantjar}"/>
+	<taskdef name="ExtAntTask" classname="${ExtAntTask.class}"></taskdef>
+	
+	
+	<target name="clean">
+			
+	</target>
+	<target name="init">
+		<mkdir dir="${localpath}/bin"/>
+	</target>
+	<condition property="dir.exists" value="true">
+		<available file="${localpath}" type="dir"/>
+	</condition>
+	<target name="checkout" unless="dir.exists">
+		<svn username="${svn.username}" password="${svn.password}" javahl="true">
+			<checkout  url="${svn.url}" destPath="${localpath}"/>
+		</svn>
+	</target>
+	<target name="updatesvn" depends="checkout">
+		<svn>
+			<update dir="${localpath}"  recurse="true" />
+		</svn>
+	</target>	
+	
+	<path id="project.classpath">
+		<fileset dir="${localpath}/webapps/sales/WEB-INF/lib">
+			<include name="**/*.jar"/>
+		</fileset>
+	</path>
+	<target name="compile" depends="clean,init,updatesvn">
+		<javac srcdir="${localpath}/component" destdir="${localpath}/bin" source="1.5"
+			fork="true" memoryInitialSize ="512M" memoryMaximumSize ="1024M"
+			 includeantruntime="false" encoding="ISO-8859-1" >
+			<classpath refid="project.classpath"></classpath>
+			<compilerarg value="-g:lines"/>
+		</javac>
+	</target>
+	<target name="upload">
+		<ftp server="10.1.13.29" port="21" userid="ccicall" password="ccicall"  
+			remotedir="/Program/WebApp/" verbose="yes">
+			<fileset dir="${build.modules.basedir}/upload">
+			</fileset>
+		</ftp>
+	</target>
+	<target name="pack">
+		<!--更新编译工程-->
+		<antcall target="compile"></antcall>
+		<!--拷贝Release文件-->
+		<ExtAntTask scriptName="gs.modules.groovy"/>
+		<!-- 上传文件到测试环境
+		<antcall target="upload"></antcall> -->
+	</target>
+	<target name="build" depends="pack">
+	</target>
+</project>
